@@ -20,6 +20,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/book-detail').then((m) => m.BookDetailPage),
   },
   {
+    path: 'compare',
+    title: 'المقارنة · رفّ الكتب',
+    loadComponent: () => import('./pages/compare').then((m) => m.ComparePage),
+  },
+  {
     path: '**',
     title: 'غير موجود · رفّ الكتب',
     loadComponent: () => import('./pages/not-found').then((m) => m.NotFoundPage),

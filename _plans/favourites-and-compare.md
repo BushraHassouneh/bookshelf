@@ -5,7 +5,7 @@
 | **Slug**    | `favourites-and-compare`                |
 | **Spec**    | `_specs/favourites-and-compare.md`      |
 | **Branch**  | `claude/feature/favourites-and-compare` |
-| **Status**  | In progress                             |
+| **Status**  | Complete                                |
 | **Created** | 2026-09-17                              |
 | **Updated** | 2026-09-17                              |
 
@@ -44,15 +44,15 @@ Nothing is persisted server-side today, and this feature does not change that.
 
 ## Progress
 
-| Phase | Name                             | Status      |
-| ----- | -------------------------------- | ----------- |
-| 1     | The favourites store             | Done        |
-| 2     | Marking, and the masthead count  | Done        |
-| 3     | Batch enrichment in the Function | Done        |
-| 4     | The comparison page              | Not started |
+| Phase | Name                             | Status |
+| ----- | -------------------------------- | ------ |
+| 1     | The favourites store             | Done   |
+| 2     | Marking, and the masthead count  | Done   |
+| 3     | Batch enrichment in the Function | Done   |
+| 4     | The comparison page              | Done   |
 
-Phases 1 to 3 are committed. The comparison page does not exist yet, so the
-masthead link added in phase 2 lands on the not-found page until phase 4.
+All four phases are committed. 49 Angular tests, 48 server tests, and a
+24-check browser pass against a real Chromium, all green.
 
 ## Action required
 
@@ -173,13 +173,13 @@ its own outcome, and the request succeeds if it was well-formed.
 
 ### Tasks
 
-- [ ] Add `src/app/pages/compare.ts` and `compare.html`.
-- [ ] Route `/compare`.
-- [ ] Model the four states as a discriminated union.
-- [ ] Render a table with the books as columns and the fields as rows.
-- [ ] Allow removing a book in place.
-- [ ] Add styles.
-- [ ] Add `compare.spec.ts`.
+- [x] Add `src/app/pages/compare.ts` and `compare.html`.
+- [x] Route `/compare`.
+- [x] Model the four states as a discriminated union.
+- [x] Render a table with the books as columns and the fields as rows.
+- [x] Allow removing a book in place.
+- [x] Add styles.
+- [x] Add `compare.spec.ts`.
 
 ### Technical details
 
@@ -195,10 +195,10 @@ leaving a blank page.
 
 ### Done when
 
-- [ ] Every acceptance criterion in the spec is met.
-- [ ] Exactly one `/api` request is made regardless of the number of books.
-- [ ] `site-reviewer` reports no BLOCKING findings.
-- [ ] The browser pass has been done, including at phone width.
+- [x] Every acceptance criterion in the spec is met.
+- [x] Exactly one `/api` request is made regardless of the number of books.
+- [x] `site-reviewer` reports no BLOCKING findings.
+- [x] The browser pass has been done, including at phone width.
 
 ## Decisions
 
@@ -234,6 +234,36 @@ nothing observable to test. The branch is never merged in this intermediate
 state, so no visitor sees it. If the phases are ever merged separately, phase 2
 must not go without phase 4.
 
+**`vercel dev` cannot serve this app's dev-server assets, and the cause is in
+`vercel.json`.** Found during phase 4's browser pass: every page loaded the
+shell but Angular never booted, because `/main.js` and `/@vite/client` returned 500. The SPA catch-all rewrite, `/(.*) → /index.html`, swallows the dev server's
+virtual assets, which have no file on disk for the filesystem check to find
+first.
+
+Production is unaffected — there `main-HASH.js` is a real file in the output
+directory, so the filesystem check matches before any rewrite — and the
+deployed site was verified working earlier. The `/api` half of `vercel dev`
+works too, and the batch endpoint was verified through it.
+
+The browser pass therefore ran against `ng serve` with `proxy.conf.json`
+forwarding `/api` to `vercel dev`, which is the second workflow the README
+already documents. Not fixed here: changing the rewrite is out of this
+feature's scope, and it belongs with a proper look at whether the catch-all
+should exclude asset extensions.
+
+**The browser pass used Playwright directly, not the Playwright MCP server.**
+The MCP servers are still awaiting approval in this session, so the check was
+done with a real Chromium driven from a script outside the repository rather
+than being skipped. Same browser, same assertions; the MCP route is what
+CLAUDE.md names and should be used once approved.
+
+**Phase 4's compare page gained a fetched-detail cache that this plan did not
+call for.** `load()` originally re-requested every remaining book whenever the
+shortlist changed, so removing one book spent another upstream call and blanked
+the other columns while it ran. The cache holds detail already fetched and only
+requests what is missing. Correct, and covered by a test that removing a book
+leaves the request count at one.
+
 **Phase 3's batch tests went in a new file, not into `enrich-core.spec.ts` as
 the task said.** They are in `server/enrich-batch.spec.ts` instead.
 
@@ -261,8 +291,9 @@ claim is actually settled.
 
 One entry per session, including the reviewer's actual result.
 
-| Date       | Phases touched | Notes                                                                                                                                                                                                                                                           |
-| ---------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-09-17 | 1              | Store written and covered. 16 new tests, 36 Angular tests total, typecheck clean. Two `localStorage` failure modes tested by making it throw — private windows and quota. Reviewer not yet run this phase.                                                      |
-| 2026-09-17 | 2              | Toggle component, used on both pages, plus the masthead count. 5 new tests, 41 Angular and 35 server. The card-wide link needed a stacking context or the button never received its click — anticipated in the plan and it was right. Two deviations recorded.  |
-| 2026-09-17 | 3              | Batch form of the endpoint, capped at 24, one AbortController for the whole batch. 13 new tests in a new file; `enrich-core.spec.ts` deliberately untouched and its 35 tests still pass, which is the evidence the single path did not change. 48 server tests. |
+| Date       | Phases touched | Notes                                                                                                                                                                                                                                                                                                                                                   |
+| ---------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-17 | 1              | Store written and covered. 16 new tests, 36 Angular tests total, typecheck clean. Two `localStorage` failure modes tested by making it throw — private windows and quota. Reviewer not yet run this phase.                                                                                                                                              |
+| 2026-09-17 | 2              | Toggle component, used on both pages, plus the masthead count. 5 new tests, 41 Angular and 35 server. The card-wide link needed a stacking context or the button never received its click — anticipated in the plan and it was right. Two deviations recorded.                                                                                          |
+| 2026-09-17 | 3              | Batch form of the endpoint, capped at 24, one AbortController for the whole batch. 13 new tests in a new file; `enrich-core.spec.ts` deliberately untouched and its 35 tests still pass, which is the evidence the single path did not change. 48 server tests.                                                                                         |
+| 2026-09-17 | 4              | Comparison page, plus the browser pass. 49 Angular, 48 server, and 24 of 24 browser checks green against real Chromium — including one `/api` request for three books, favourites surviving a genuine reload, the current marker under forced greyscale, and no horizontal scroll at 390px. Three deviations recorded, one of them a `vercel.json` bug. |

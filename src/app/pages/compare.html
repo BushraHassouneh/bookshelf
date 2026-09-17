@@ -1,0 +1,122 @@
+@let books = favourites.books();
+@let state = detail();
+
+<app-page-header eyebrow="المقارنة" heading="المفضّلة" lede="الكتب التي اخترتها، جنبًا إلى جنب." />
+
+@if (books.length === 0) {
+  <div class="state state--empty">
+    <p class="state__title">لا توجد كتب في المفضّلة بعد.</p>
+    <p class="state__detail">
+      علّم أي كتاب بزر «أضف إلى المفضّلة» من صفحة الفهرس أو من صفحة الكتاب، وسيظهر هنا للمقارنة.
+    </p>
+    <a class="button" routerLink="/books">تصفَّح الكتب</a>
+  </div>
+} @else {
+  @switch (state.kind) {
+    @case ('loading') {
+      <p class="state state--loading" role="status" aria-live="polite">
+        الكتب ظاهرة أدناه، وجارٍ جلب تفاصيلها الإضافية…
+      </p>
+    }
+
+    @case ('error') {
+      <div class="state state--error" role="alert">
+        <p class="state__title">{{ state.error.message }}</p>
+        <p class="state__detail">الكتب نفسها معروضة أدناه، التفاصيل الإضافية وحدها هي الناقصة.</p>
+        <button type="button" class="button" (click)="load()">أعد المحاولة</button>
+      </div>
+    }
+  }
+
+  <div class="compare">
+    <table class="compare__table">
+      <caption class="compare__caption">
+        مقارنة بين
+        {{
+          books.length
+        }}
+        من الكتب المفضّلة
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">الكتاب</th>
+          @for (book of books; track book.slug) {
+            <th scope="col">{{ book.title }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">المؤلف</th>
+          @for (book of books; track book.slug) {
+            <td>{{ book.author }}</td>
+          }
+        </tr>
+        <tr>
+          <th scope="row">السعر</th>
+          @for (book of books; track book.slug) {
+            <td>
+              <span dir="ltr">{{ formatMoney(book.priceJod) }}</span>
+            </td>
+          }
+        </tr>
+        <tr>
+          <th scope="row">تاريخ النشر</th>
+          @for (book of books; track book.slug) {
+            <td>
+              <span dir="ltr">{{ formatIsoDate(book.publishedDate) }}</span>
+            </td>
+          }
+        </tr>
+        <tr>
+          <th scope="row">الناشر</th>
+          @for (book of books; track book.slug) {
+            <td>{{ enrichmentFor(book.isbn13)?.publisher ?? '—' }}</td>
+          }
+        </tr>
+        <tr>
+          <th scope="row">عدد الصفحات</th>
+          @for (book of books; track book.slug) {
+            @let pages = enrichmentFor(book.isbn13)?.pageCount;
+            <td>
+              @if (pages) {
+                <span dir="ltr">{{ pages }}</span>
+              } @else {
+                —
+              }
+            </td>
+          }
+        </tr>
+        <tr>
+          <th scope="row">التقييم</th>
+          @for (book of books; track book.slug) {
+            @let rating = enrichmentFor(book.isbn13)?.averageRating;
+            <td>
+              @if (rating) {
+                <span dir="ltr">{{ rating }}</span> من 5
+              } @else {
+                —
+              }
+            </td>
+          }
+        </tr>
+        <tr>
+          <th scope="row"><span class="visually-hidden">إجراءات</span></th>
+          @for (book of books; track book.slug) {
+            <td>
+              <a class="compare__link" [routerLink]="['/books', book.slug]">التفاصيل</a>
+              <button
+                type="button"
+                class="compare__remove"
+                [attr.aria-label]="'إزالة ' + book.title + ' من المقارنة'"
+                (click)="remove(book.slug)"
+              >
+                إزالة
+              </button>
+            </td>
+          }
+        </tr>
+      </tbody>
+    </table>
+  </div>
+}

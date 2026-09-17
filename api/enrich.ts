@@ -1,3 +1,14 @@
+/// <reference types="node" />
+
+/**
+ * The reference above is load-bearing. Vercel typechecks this file against the
+ * repository's root tsconfig.json, and it cannot follow that file's project
+ * references — a documented limitation — so it never sees tsconfig.api.json's
+ * `types: ["node"]` and reports `Cannot find name 'process'` during the build.
+ * Declaring the dependency here fixes it without putting Node globals on the
+ * browser side.
+ */
+
 /**
  * The application's only Vercel Function, and its only outbound network call.
  *

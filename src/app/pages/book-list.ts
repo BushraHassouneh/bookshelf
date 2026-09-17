@@ -1,18 +1,20 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { CatalogueService } from '../core/catalogue-service';
+import { CatalogueService, CategoryNotFoundError } from '../core/catalogue-service';
+import { CATEGORIES } from '../core/catalogue';
 import type { Book, Category } from '../core/models';
 import { PageHeader } from '../shared/page-header';
 import { formatIsoDate, formatMoney } from '../shared/formatters';
 
 /**
- * The four states the house style requires of every list. Modelled as a
- * discriminated union so the template cannot render two of them at once, and so
- * adding a state is a compile error everywhere it is handled.
+ * The states this page can be in. `missing` is separate from `error` on purpose:
+ * a slug nobody stocks is a different thing from a catalogue that failed to load,
+ * and offering a retry for the first would be a lie.
  */
 type ListState =
   | { readonly kind: 'loading' }
   | { readonly kind: 'error'; readonly message: string }
+  | { readonly kind: 'missing'; readonly slug: string }
   | { readonly kind: 'empty'; readonly category: Category }
   | { readonly kind: 'success'; readonly category: Category; readonly books: readonly Book[] };
 
@@ -25,6 +27,13 @@ type ListState =
 export class BookListPage {
   private readonly catalogue = inject(CatalogueService);
 
+  /**
+   * Bound from /categories/:slug by withComponentInputBinding(). Absent at
+   * /books, which is what keeps that route rendering the first category.
+   */
+  readonly slug = input<string | undefined>(undefined);
+
+  protected readonly categories = CATEGORIES;
   protected readonly state = signal<ListState>({ kind: 'loading' });
 
   // Exposed for the template; formatting never happens inline.
@@ -32,23 +41,69 @@ export class BookListPage {
   protected readonly formatMoney = formatMoney;
 
   constructor() {
-    void this.load();
+    // Keyed on the input, so switching category re-loads without a remount.
+    // The constructor must not also load, or every visit would load twice.
+    effect(() => {
+      const slug = this.slug();
+      void this.load(slug);
+    });
   }
 
-  protected async load(): Promise<void> {
+  /**
+   * The slug currently being shown, for marking the active navigation link.
+   *
+   * Must not throw: the template calls it from the nav, which renders above the
+   * switch in every state. `defaultCategorySlug` throws on an empty catalogue,
+   * so reading it here would paint nothing at all — not even the header block.
+   */
+  protected activeSlug(): string {
+    const explicit = this.slug();
+    if (explicit !== undefined) {
+      return explicit;
+    }
+    const first = this.categories[0];
+    return first === undefined ? '' : first.slug;
+  }
+
+  /**
+   * The header block's heading and sentence, for every state. Computed here
+   * rather than as nested ternaries in the template, which a five-member union
+   * makes unreadable.
+   */
+  protected heading(): string {
+    const current = this.state();
+    if (current.kind === 'success' || current.kind === 'empty') {
+      return current.category.name;
+    }
+    return current.kind === 'missing' ? 'تصنيف غير موجود' : 'الكتب';
+  }
+
+  protected lede(): string {
+    const current = this.state();
+    if (current.kind === 'success' || current.kind === 'empty') {
+      return current.category.description;
+    }
+    return current.kind === 'missing' ? 'لا يوجد تصنيف بهذا العنوان على الرفّ.' : 'تصفَّح الرفّ.';
+  }
+
+  protected async load(slug = this.slug()): Promise<void> {
     this.state.set({ kind: 'loading' });
+    // Resolved inside the try: defaultCategorySlug throws on an empty catalogue,
+    // and outside it that throw escapes into the effect() as an unhandled
+    // rejection, leaving the page on the loading state for good.
+    let wanted = slug ?? '';
     try {
-      const { category, books } = await this.catalogue.listCategory(
-        this.catalogue.defaultCategorySlug,
-      );
+      wanted = slug ?? this.catalogue.defaultCategorySlug;
+      const { category, books } = await this.catalogue.listCategory(wanted);
       this.state.set(
         books.length === 0 ? { kind: 'empty', category } : { kind: 'success', category, books },
       );
-    } catch {
-      this.state.set({
-        kind: 'error',
-        message: 'تعذّر تحميل الفهرس.',
-      });
+    } catch (cause) {
+      this.state.set(
+        cause instanceof CategoryNotFoundError
+          ? { kind: 'missing', slug: wanted }
+          : { kind: 'error', message: 'تعذّر تحميل الفهرس.' },
+      );
     }
   }
 }

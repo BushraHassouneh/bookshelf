@@ -8,6 +8,13 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/book-list').then((m) => m.BookListPage),
   },
   {
+    // Not nested under /books: /books/:slug is already the detail route, and a
+    // three-segment sibling there would be one rename away from ambiguity.
+    path: 'categories/:slug',
+    title: 'التصنيف · رفّ الكتب',
+    loadComponent: () => import('./pages/book-list').then((m) => m.BookListPage),
+  },
+  {
     path: 'books/:slug',
     title: 'كتاب · رفّ الكتب',
     loadComponent: () => import('./pages/book-detail').then((m) => m.BookDetailPage),

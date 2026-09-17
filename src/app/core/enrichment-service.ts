@@ -1,8 +1,18 @@
 import { Injectable } from '@angular/core';
-import type { ApiError, Enrichment } from '../../../shared/api-contract';
+import type {
+  ApiError,
+  BatchEnrichment,
+  Enrichment,
+  EnrichmentEntry,
+} from '../../../shared/api-contract';
+import { MAX_BATCH_ISBNS } from '../../../shared/api-contract';
 
 export type EnrichmentResult =
   | { readonly ok: true; readonly value: Enrichment }
+  | { readonly ok: false; readonly error: ApiError };
+
+export type BatchEnrichmentResult =
+  | { readonly ok: true; readonly entries: readonly EnrichmentEntry[] }
   | { readonly ok: false; readonly error: ApiError };
 
 /** Shown when the server is unreachable, so the UI never renders a raw exception. */
@@ -14,6 +24,11 @@ const UNREACHABLE: ApiError = {
 const MALFORMED: ApiError = {
   code: 'external_error',
   message: 'أرسل الخادم استجابة تعذّر على هذه الصفحة قراءتها.',
+};
+
+const TOO_MANY: ApiError = {
+  code: 'invalid_request',
+  message: `لا يمكن مقارنة أكثر من ${MAX_BATCH_ISBNS} كتابًا في وقت واحد.`,
 };
 
 function isEnrichment(value: unknown): value is Enrichment {
@@ -66,5 +81,48 @@ export class EnrichmentService {
     }
 
     return isEnrichment(payload) ? { ok: true, value: payload } : { ok: false, error: MALFORMED };
+  }
+
+  /**
+   * Detail for several books in one request. The comparison page uses this
+   * instead of calling load() per book, so the number of requests does not grow
+   * with the size of the shortlist.
+   */
+  async loadMany(isbn13s: readonly string[]): Promise<BatchEnrichmentResult> {
+    if (isbn13s.length === 0) {
+      return { ok: true, entries: [] };
+    }
+    // The spec enforces the cap on both sides. The server is the boundary that
+    // matters, but without this a shortlist over the cap would fail the whole
+    // page with a 400 instead of being caught here.
+    if (isbn13s.length > MAX_BATCH_ISBNS) {
+      return { ok: false, error: TOO_MANY };
+    }
+
+    const query = encodeURIComponent(isbn13s.join(','));
+    let response: Response;
+    try {
+      response = await fetch(`/api/enrich?isbns=${query}`, {
+        headers: { accept: 'application/json' },
+      });
+    } catch {
+      return { ok: false, error: UNREACHABLE };
+    }
+
+    let payload: unknown = null;
+    try {
+      payload = await response.json();
+    } catch {
+      return { ok: false, error: response.ok ? MALFORMED : UNREACHABLE };
+    }
+
+    if (!response.ok) {
+      return { ok: false, error: readApiError(payload) ?? MALFORMED };
+    }
+
+    const results = (payload as Partial<BatchEnrichment>).results;
+    return Array.isArray(results)
+      ? { ok: true, entries: results as readonly EnrichmentEntry[] }
+      : { ok: false, error: MALFORMED };
   }
 }

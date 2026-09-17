@@ -4,6 +4,7 @@ import { CatalogueService, CategoryNotFoundError } from '../core/catalogue-servi
 import { CATEGORIES } from '../core/catalogue';
 import type { Book, Category } from '../core/models';
 import { PageHeader } from '../shared/page-header';
+import { FavouriteToggle } from '../shared/favourite-toggle';
 import { formatIsoDate, formatMoney } from '../shared/formatters';
 
 /**
@@ -21,7 +22,7 @@ type ListState =
 @Component({
   selector: 'app-book-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, PageHeader],
+  imports: [RouterLink, PageHeader, FavouriteToggle],
   templateUrl: './book-list.html',
 })
 export class BookListPage {

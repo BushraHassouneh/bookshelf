@@ -157,6 +157,134 @@ a {
   margin: 0.375rem 0 0;
 }
 
+/* Screen-reader-only text, for headers a sighted reader does not need. */
+.visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Comparison table. */
+.compare {
+  /* Scrolls rather than squashing: a shortlist of six is legible side by side
+     on a phone only if the columns keep their width. */
+  overflow-x: auto;
+  margin-block-start: 1.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.compare__table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+.compare__caption {
+  padding: 0.875rem 1rem;
+  border-block-end: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 0.875rem;
+  text-align: start;
+}
+
+.compare__table th,
+.compare__table td {
+  padding: 0.7rem 1rem;
+  border-block-start: 1px solid var(--rule);
+  text-align: start;
+  vertical-align: top;
+}
+
+.compare__table thead th {
+  border-block-start: 0;
+  font-size: 1rem;
+}
+
+.compare__table tbody th {
+  color: var(--muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.compare__table tbody tr:nth-child(odd) td {
+  background: color-mix(in srgb, var(--bg-tint) 45%, transparent);
+}
+
+.compare__link {
+  margin-inline-end: 0.75rem;
+  font-weight: 600;
+}
+
+.compare__remove {
+  padding: 0.2rem 0.7rem;
+  border: 1px solid var(--error-rule);
+  border-radius: 999px;
+  background: var(--error-bg);
+  color: var(--error-ink);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.compare__remove:hover {
+  background: var(--error-ink);
+  color: #ffffff;
+}
+
+/* Favourite toggle. */
+.favourite-toggle {
+  /* The book card is one big link via .book-card__link::after; without a
+     stacking context above it the button never receives the click. */
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin-block-start: 0.875rem;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.favourite-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Filled and bold when on, so the state reads without colour. The star is a
+   second, redundant signal for the same reason. */
+.favourite-toggle--on {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.favourite-toggle--on:hover {
+  color: #ffffff;
+}
+
+.favourite-toggle__mark {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.masthead__count {
+  font-variant-numeric: tabular-nums;
+}
+
 /* Category navigation. */
 .category-nav {
   margin-block-end: 1.5rem;

@@ -6,6 +6,7 @@ import type { Book } from '../core/models';
 import type { ApiError, Enrichment } from '../../../shared/api-contract';
 import { THUMBNAIL_HEIGHT, THUMBNAIL_WIDTH } from '../../../shared/api-contract';
 import { PageHeader } from '../shared/page-header';
+import { FavouriteToggle } from '../shared/favourite-toggle';
 import { formatIsoDate, formatMoney } from '../shared/formatters';
 
 type BookState =
@@ -23,7 +24,7 @@ type EnrichmentState =
 @Component({
   selector: 'app-book-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, PageHeader],
+  imports: [RouterLink, PageHeader, FavouriteToggle],
   templateUrl: './book-detail.html',
 })
 export class BookDetailPage {

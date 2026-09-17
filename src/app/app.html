@@ -5,6 +5,11 @@
     <a class="masthead__brand" routerLink="/books">رفّ الكتب</a>
     <nav class="masthead__nav" aria-label="التنقل الرئيسي">
       <a routerLink="/books">كل الكتب</a>
+      <a routerLink="/compare">
+        المقارنة
+        <!-- Announced when it changes, so the count is not a visual-only signal. -->
+        <span class="masthead__count" dir="ltr" aria-live="polite">({{ favourites.count() }})</span>
+      </a>
     </nav>
   </header>
 

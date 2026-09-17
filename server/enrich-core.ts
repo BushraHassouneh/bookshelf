@@ -114,14 +114,6 @@ function missingKeyResponse(): Response {
 }
 
 /**
- * One ISBN's lookup, for the list form. Never throws: a failure here is that
- * entry's outcome, not the whole request's, because the page can still show the
- * book's local fields.
- *
- * An abort is the exception — the caller checks the signal afterwards and turns
- * it into a timeout for the request as a whole.
- */
-/**
  * `failed` separates "that lookup failed" from "Google has no such volume".
  * Both leave the entry absent, but only the first means something is wrong: if
  * every lookup fails — a revoked key, an outage — the request must say so rather
@@ -132,6 +124,14 @@ interface EntryOutcome {
   failed: boolean;
 }
 
+/**
+ * One ISBN's lookup, for the list form. Never throws: a failure here is that
+ * entry's outcome, not the whole request's, because the page can still show the
+ * book's local fields.
+ *
+ * An abort is the exception — the caller checks the signal afterwards and turns
+ * it into a timeout for the request as a whole.
+ */
 async function fetchEntry(
   isbn13: string,
   apiKey: string,
@@ -165,7 +165,7 @@ async function handleBatch(raw: string, deps: EnrichDeps): Promise<Response> {
   if (isbns.length === 0) {
     return errorResponse(
       'invalid_request',
-      'أرسل معامل "isbns" يحتوي على رقم ردمك-13 واحد على الأقل.',
+      'أرسل معامل "isbns" يحتوي على رقم ISBN-13 واحد على الأقل.',
       400,
     );
   }
@@ -179,7 +179,7 @@ async function handleBatch(raw: string, deps: EnrichDeps): Promise<Response> {
   // Validated before anything is fetched, so one bad member cannot smuggle a
   // value into an outbound URL.
   if (!isbns.every(isValidIsbn13)) {
-    return errorResponse('invalid_request', 'أحد أرقام الردمك المُرسلة غير صحيح.', 400);
+    return errorResponse('invalid_request', 'أحد أرقام ISBN المُرسلة غير صحيح.', 400);
   }
   if (deps.apiKey === undefined || deps.apiKey === '') {
     return missingKeyResponse();
@@ -233,7 +233,7 @@ export async function handleEnrich(request: Request, deps: EnrichDeps): Promise<
 
   const isbn13 = (one ?? '').trim();
   if (!isValidIsbn13(isbn13)) {
-    return errorResponse('invalid_request', 'أرسل معامل "isbn" يحتوي على رقم ردمك-13 صحيح.', 400);
+    return errorResponse('invalid_request', 'أرسل معامل "isbn" يحتوي على رقم ISBN-13 صحيح.', 400);
   }
 
   // Fail loudly rather than quietly making a keyless request that Google
@@ -273,7 +273,7 @@ export async function handleEnrich(request: Request, deps: EnrichDeps): Promise<
 
   const enrichment = normalizeVolume(payload, isbn13);
   if (enrichment === null) {
-    return errorResponse('not_found', 'لا يملك Google Books سجلًا لهذا الردمك.', 404);
+    return errorResponse('not_found', 'لا يملك Google Books سجلًا لهذا الرقم.', 404);
   }
 
   return Response.json(enrichment, {

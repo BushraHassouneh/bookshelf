@@ -47,12 +47,12 @@ Nothing is persisted server-side today, and this feature does not change that.
 | Phase | Name                             | Status      |
 | ----- | -------------------------------- | ----------- |
 | 1     | The favourites store             | Done        |
-| 2     | Marking, and the masthead count  | Not started |
+| 2     | Marking, and the masthead count  | Done        |
 | 3     | Batch enrichment in the Function | Not started |
 | 4     | The comparison page              | Not started |
 
-No files have been changed for this feature yet. The spec is committed; nothing
-else.
+Phases 1 and 2 are committed. The comparison page does not exist yet, so the
+masthead link added in phase 2 lands on the not-found page until phase 4.
 
 ## Action required
 
@@ -106,12 +106,12 @@ than in the page means the comparison and any future view agree.
 
 ### Tasks
 
-- [ ] Add a toggle button component under `src/app/shared/`.
-- [ ] Use it on the book card in `book-list.html`.
-- [ ] Use it on `book-detail.html`.
-- [ ] Add the count and a link to the comparison page in `app.html`.
-- [ ] Add styles to `styles.css`, logical properties only.
-- [ ] Extend the page specs to cover marking from both pages.
+- [x] Add a toggle button component under `src/app/shared/`.
+- [x] Use it on the book card in `book-list.html`.
+- [x] Use it on `book-detail.html`.
+- [x] Add the count and a link to the comparison page in `app.html`.
+- [x] Add styles to `styles.css`, logical properties only.
+- [x] Extend the page specs to cover marking from both pages.
 
 ### Technical details
 
@@ -129,11 +129,11 @@ The masthead count is a link to `/compare`, rendered on every page, with an
 
 ### Done when
 
-- [ ] Marking on the list page, reloading, and returning shows it still marked.
-- [ ] Marking on the detail page does the same.
-- [ ] Clicking the button does not navigate to the book.
-- [ ] The count updates without a reload.
-- [ ] `npm run typecheck`, `npm run build` and `npm test` pass.
+- [x] Marking on the list page, reloading, and returning shows it still marked.
+- [x] Marking on the detail page does the same.
+- [x] Clicking the button does not navigate to the book.
+- [x] The count updates without a reload.
+- [x] `npm run typecheck`, `npm run build` and `npm test` pass.
 
 ## Phase 3: Batch enrichment in the Function
 
@@ -223,10 +223,28 @@ Everything else raised in the spec is settled above.
 Recorded as they happen. A plan that survives contact with the code unchanged is
 either very good or unread.
 
+**Phase 2 ships a link to a route that does not exist yet.** The plan puts the
+masthead count in phase 2 and the comparison page in phase 4, so between the two
+commits `/compare` falls through to the not-found page. Noticed while building
+phase 2, not planned for.
+
+Left as it is rather than reordered. The alternative — building the page first,
+or holding the masthead back — would either merge phases or leave phase 2 with
+nothing observable to test. The branch is never merged in this intermediate
+state, so no visitor sees it. If the phases are ever merged separately, phase 2
+must not go without phase 4.
+
+**Phase 2's "reloading and returning" check is covered by unit tests, not a
+reload.** The persistence test constructs a fresh service against the same
+`localStorage`, which is what a reload does to this code but is not literally a
+reload. The real browser pass is in phase 4's Done when, and that is where the
+claim is actually settled.
+
 ## Session log
 
 One entry per session, including the reviewer's actual result.
 
-| Date       | Phases touched | Notes                                                                                                                                                                                                      |
-| ---------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-09-17 | 1              | Store written and covered. 16 new tests, 36 Angular tests total, typecheck clean. Two `localStorage` failure modes tested by making it throw — private windows and quota. Reviewer not yet run this phase. |
+| Date       | Phases touched | Notes                                                                                                                                                                                                                                                          |
+| ---------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-17 | 1              | Store written and covered. 16 new tests, 36 Angular tests total, typecheck clean. Two `localStorage` failure modes tested by making it throw — private windows and quota. Reviewer not yet run this phase.                                                     |
+| 2026-09-17 | 2              | Toggle component, used on both pages, plus the masthead count. 5 new tests, 41 Angular and 35 server. The card-wide link needed a stacking context or the button never received its click — anticipated in the plan and it was right. Two deviations recorded. |

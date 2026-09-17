@@ -157,6 +157,53 @@ a {
   margin: 0.375rem 0 0;
 }
 
+/* Favourite toggle. */
+.favourite-toggle {
+  /* The book card is one big link via .book-card__link::after; without a
+     stacking context above it the button never receives the click. */
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin-block-start: 0.875rem;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.favourite-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Filled and bold when on, so the state reads without colour. The star is a
+   second, redundant signal for the same reason. */
+.favourite-toggle--on {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.favourite-toggle--on:hover {
+  color: #ffffff;
+}
+
+.favourite-toggle__mark {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.masthead__count {
+  font-variant-numeric: tabular-nums;
+}
+
 /* Category navigation. */
 .category-nav {
   margin-block-end: 1.5rem;

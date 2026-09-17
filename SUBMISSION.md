@@ -1,10 +1,16 @@
 # Submission
 
 - **Site:** <https://bookshelf-drab-sigma.vercel.app>
-- **Preview deployment from a feature branch:** **not available — see Outstanding below.**
-  `vercel git connect` fails with "You need to add a Login Connection to your
-  GitHub account first", so Vercel never builds a pushed branch. The branches are
-  all on GitHub; nothing has ever built one.
+- **Preview deployment from a feature branch:**
+  <https://bookshelf-rltc7ipg3-boshra98hass-1048s-projects.vercel.app>
+  Built from `claude/feature/favourites-and-compare`.
+
+  Produced with `vercel deploy` from that branch rather than by Vercel building a
+  pushed branch. `vercel git connect` still fails — the account now has a GitHub
+  login connection, but Vercel's GitHub App has not been granted access to the
+  repository, which is a separate permission. The deployment is a genuine Preview
+  of the branch's code; it simply was not triggered by the push.
+
 - **Stack:** Angular 22.1.6, TypeScript 6.0.3, Node 24.x, deployed as a static SPA
   with one Vercel Function at `api/enrich.ts`.
 - **External service and the variable that holds its key:** Google Books API /
@@ -106,6 +112,17 @@ books" — with no error state and no retry. Fixed in `828f7ac`: entries now car
 whether they failed, one flaky book stays non-fatal, and every lookup failing
 returns `502 external_error`.
 
+**The production build printed `Cannot find name 'process'` and nobody noticed
+until a deploy.** Vercel typechecks files under `api/` against the root
+`tsconfig.json` and cannot follow its project references, so it never saw
+`tsconfig.api.json`'s `types: ["node"]`. Our own `npm run typecheck` passes
+because it runs the three projects explicitly — which is exactly why the gap was
+invisible locally. Fixed in `cc5ecdc` with a triple-slash reference in the file
+itself, so the dependency travels with the code rather than with a config Vercel
+will not read. The deployment was marked READY either way, so this was a
+diagnostic rather than a failure, but a build that prints an unresolved name is
+one change away from a broken function.
+
 **Four ISBNs I guessed for well-known Arabic titles all resolved to unrelated
 books** — a children's book, a short-story collection. That is what turned
 `/add-category`'s verification step from a formality into the reason the command
@@ -140,17 +157,16 @@ update the Vercel environment variable for Production and Preview, and redeploy.
 
 Honest list of what is not finished:
 
-1. **No preview deployment exists.** Vercel needs GitHub added as a login
-   connection before `vercel git connect` will work and branches will build.
-2. **Deployment Protection is enabled** on the Vercel project, so the production
-   URL asks for authentication. A marker cannot open the site until it is
-   disabled in Settings → Deployment Protection.
-3. **Neither MCP server has been approved**, and `CONTEXT7_API_KEY` is unset.
-4. **`site-reviewer` was never invoked as a registered subagent.** Claude Code
+1. **Vercel does not build pushed branches.** The GitHub login connection is in
+   place, but Vercel's GitHub App has not been granted access to the repository,
+   so `vercel git connect` still fails. The preview URL above was produced from
+   the branch with `vercel deploy` instead.
+2. **Neither MCP server has been approved**, and `CONTEXT7_API_KEY` is unset.
+3. **`site-reviewer` was never invoked as a registered subagent.** Claude Code
    loads `.claude/agents/` at startup and the file was created mid-session, so
    both reviews ran its checklist through a general-purpose agent pointed at the
    definition file. Same checklist, same findings; not the same mechanism.
-5. **The browser pass used Playwright directly, not the Playwright MCP server**,
+4. **The browser pass used Playwright directly, not the Playwright MCP server**,
    for the same reason. 24 checks against a real Chromium, all passing.
 
 ## Verification

@@ -44,16 +44,24 @@ critical study rather than the novel.
 
 ## Secrets
 
-`GOOGLE_BOOKS_API_KEY` is the only secret. It lives in `.env`, which is gitignored.
-`.env.example` is the committed list and holds **names only, never values**.
+Two credentials. Both appear by name in `.env.example`, which is committed and
+holds **names only, never values**. Both hold real values only in `.env`, which is
+gitignored.
 
-- It is read in exactly one place: `api/enrich.ts`, via `process.env`.
-- It must never reach client code, a browser-exposed variable, or a committed file.
-- The Function returns `missing_configuration` when it is unset rather than making
-  a keyless request.
-- In production it is set in Vercel under Settings → Environment Variables, scoped
-  to Production and Preview. A variable added after a deployment does not reach it
-  — redeploy.
+| Variable               | Read by                           | Needed in Vercel          |
+| ---------------------- | --------------------------------- | ------------------------- |
+| `GOOGLE_BOOKS_API_KEY` | `api/enrich.ts`, server-side only | yes, Production + Preview |
+| `CONTEXT7_API_KEY`     | Claude Code, via `.mcp.json`      | no                        |
+
+- `GOOGLE_BOOKS_API_KEY` is read in exactly one place, via `process.env`. It must
+  never reach client code, a browser-exposed variable, or a committed file. The
+  Function returns `missing_configuration` when it is unset rather than making a
+  keyless request.
+- `CONTEXT7_API_KEY` is substituted into `.mcp.json` as `${CONTEXT7_API_KEY}`, so
+  it must exist in the environment when Claude Code starts. Putting it in `.env` is
+  not enough — export it, or `setx` it once.
+- A variable added to Vercel after a deployment does not reach that deployment —
+  redeploy.
 
 Never add a wildcard such as `.env*` to `.gitignore`. It also matches
 `.env.example` and silently stops it being committed. List env files individually.

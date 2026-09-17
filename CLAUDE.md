@@ -2,102 +2,106 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project overview
-
-Bookshelf is a small Arabic-literature catalogue: one category, four books, a list
-page and a detail page. The detail page is enriched by a single call to the Google
-Books API, made from a Vercel Serverless Function so the credential never reaches
-the browser.
-
+An Arabic-literature catalogue. Angular 22 static SPA plus one Vercel Function.
 The interface is Arabic and right-to-left.
 
 ## Commands
 
 ```bash
-npm install                  # install dependencies
-npm start                    # Angular dev server on http://localhost:4200
+npm install
+npm start                    # Angular dev server, http://localhost:4200
 npx vercel dev               # app + /api on one origin, http://localhost:3000
 npm run build                # production build into dist/bookshelf/browser
-npm run typecheck            # all three TypeScript projects
+npm run typecheck            # all three TS projects; run this before any commit
 npm test                     # Angular tests, then server tests
-npm run test:app             # Angular tests only
-npm run test:server          # server tests only
+npx vitest run --config vitest.server.config.ts -t "returns timeout"   # one test
 ```
 
-Run a single test file:
+Never add a `dev` script that runs `vercel dev`. Vercel executes `package.json`'s
+`dev` script as its dev command, so that makes it invoke itself and refuse to
+start.
 
-```bash
-npx vitest run --config vitest.server.config.ts server/enrich-core.spec.ts
-```
+## Data shape
 
-Run a single test by name:
+Categories and books live in `src/app/core/catalogue.ts`; their types are in
+`src/app/core/models.ts`. There is no database and must not be one.
 
-```bash
-npx vitest run --config vitest.server.config.ts -t "returns timeout"
-```
+A book must have every one of these fields:
 
-## Architecture
+| Field             | Notes                                                        |
+| ----------------- | ------------------------------------------------------------ |
+| `slug`            | transliterated ASCII, used in the URL                        |
+| `categorySlug`    | must match an existing category's `slug`                     |
+| `title`, `author` | Arabic                                                       |
+| `isbn13`          | 13 digits, must pass the checksum in `server/enrich-core.ts` |
+| `publishedDate`   | ISO `YYYY-MM-DD`                                             |
+| `priceJod`        | plain number, never a preformatted string                    |
+| `coverAlt`        | Arabic alt text                                              |
 
-Angular is a static SPA. It is not the backend. The backend is one Vercel
-Serverless Function at the repository root.
+Before adding a book, confirm its ISBN resolves in Google Books **and** that the
+returned author is the real author. Google's Arabic metadata often credits a
+critical study rather than the novel.
 
-```
-api/enrich.ts          the only Function, and the only outbound network call
-server/                its logic and tests
-shared/api-contract.ts wire types, compiled by both sides
-src/                   the Angular application
-```
+## Secrets
 
-### Why the layout is like this
+`GOOGLE_BOOKS_API_KEY` is the only secret. It lives in `.env`, which is gitignored.
+`.env.example` is the committed list and holds **names only, never values**.
 
-`api/` holds exactly one file because Vercel turns every file under `api/` into a
-separate Function. The logic therefore lives in `server/enrich-core.ts`, which
-`api/enrich.ts` imports. Spec files for the Function also live in `server/` for
-the same reason — a spec file under `api/` would be deployed.
+- It is read in exactly one place: `api/enrich.ts`, via `process.env`.
+- It must never reach client code, a browser-exposed variable, or a committed file.
+- The Function returns `missing_configuration` when it is unset rather than making
+  a keyless request.
+- In production it is set in Vercel under Settings → Environment Variables, scoped
+  to Production and Preview. A variable added after a deployment does not reach it
+  — redeploy.
 
-`shared/api-contract.ts` is the single source of truth for the request and
-response shapes. It is included by both `tsconfig.app.json` and
-`tsconfig.api.json`, so changing it breaks the typecheck on whichever side has not
-been updated.
+Never add a wildcard such as `.env*` to `.gitignore`. It also matches
+`.env.example` and silently stops it being committed. List env files individually.
+`vercel link` has done this once already.
 
-### Three TypeScript projects
+Check with: `git check-ignore -v .env .env.example` — it must name `.env` and stay
+silent on `.env.example`.
 
-| File | Covers | Notes |
-|---|---|---|
-| `tsconfig.app.json` | `src/`, `shared/` | `types: []` — no Node globals in browser code |
-| `tsconfig.spec.json` | `src/**/*.spec.ts`, `shared/` | Vitest globals |
-| `tsconfig.api.json` | `api/`, `server/`, `shared/` | `types: ["node"]` |
+## Rules
 
-`tsc -b` does not work here — Angular's generated projects are not `composite`.
-The typecheck script runs the three projects explicitly instead.
+**Backend.** `api/` holds exactly one file. Vercel turns every file under `api/`
+into its own Function, so new logic goes in `server/`, and spec files for the
+Function stay in `server/` too. All external calls happen in the Function, never in
+Angular, with a five-second timeout. Every failure returns
+`{ "error": { "code": …, "message": … } }` and nothing else.
 
-### The enrichment request
+**Formatting.** Dates render as `15 Sep 2026`, money as `12.50 JOD` — two decimals
+even though the dinar is conventionally three. Both go through
+`src/app/shared/formatters.ts`. Never use `toLocaleString`, and never use Angular's
+`date` or `currency` pipes: they vary with the visitor's locale.
 
-The browser calls `/api/enrich?isbn=…`. The Function validates the ISBN-13
-checksum, calls Google Books with a five-second timeout, reduces the response to
-eight fields, and returns them. Every failure returns the same envelope.
+**Pages.** Every page opens with `<app-page-header>`, including error pages. Every
+list renders loading, empty, error and success — a bare spinner is a defect. The
+empty state says what to do next; the error state says what failed and offers a
+retry that repeats the failed call.
 
-### Two test suites
+**RTL.** Latin-script values inside Arabic text are wrapped in `<span dir="ltr">`
+— ISBNs, dates, prices, page counts. Use CSS logical properties
+(`margin-inline-start`, not `margin-left`).
 
-`test:app` is Angular's Vitest via `@angular/build`, scoped to `src/` with jsdom.
-`test:server` is a plain Node Vitest over `server/`. They are separate because the
-Function's code lives outside `src/` and needs no DOM. No test touches the network
-or a real key.
+**Images.** Anything from an external URL needs explicit `width` and `height` plus
+alt text. Decorative images use `alt=""`.
 
-## Versions
+**Dependencies.** Every version in `package.json` is pinned exactly — no `^`, no
+`~`. Angular 22 requires TypeScript `>=6.0 <6.1`; it is pinned at 6.0.3 and
+TypeScript 7 breaks the build. `engines.node` is `24.x` rather than an exact pin
+because Vercel rejects an exact patch version.
 
-Angular 22.1.6 requires TypeScript `>=6.0 <6.1`. This project pins 6.0.3 exactly.
-Installing TypeScript 7 breaks the build. All dependencies are pinned exactly, with
-no caret or tilde ranges.
+**Typecheck.** Do not use `tsc -b` — Angular's generated projects are not
+`composite`. `npm run typecheck` runs the three projects explicitly.
 
-Node 24.19.0. `engines.node` is `24.x` rather than an exact pin because Vercel
-rejects an exact patch version.
+## Definition of done
 
-## Conventions
+A change is not done until all of these pass:
 
-- Dates render as `15 Sep 2026` and money as `12.50 JOD`, both through the shared
-  formatters in `src/app/shared/formatters.ts`.
-- Every page opens with the `app-page-header` component.
-- Every list renders loading, empty, error and success states.
-- External calls happen only in the Vercel Function.
-- Latin-script values inside Arabic text are wrapped in `<span dir="ltr">`.
+1. `npm run typecheck`, `npm run build` and `npm test` all succeed.
+2. The `site-reviewer` subagent has reviewed the branch diff and every BLOCKING
+   finding is fixed. Run it before asking for review, not after.
+3. The changed pages have been opened in a real browser through the Playwright MCP
+   server, and the four states were checked — not just the happy path.
+4. `git check-ignore -v .env .env.example` still names only `.env`.

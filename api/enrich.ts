@@ -18,7 +18,11 @@
  * Function, and the slice is specified to have exactly one.
  */
 
-import { EXTERNAL_TIMEOUT_MS, handleEnrich } from '../server/enrich-core';
+// The .js extension is required, not stylistic. Vercel transpiles this file
+// rather than bundling it, so Node's ESM resolver sees the specifier verbatim,
+// and it does not guess extensions. TypeScript maps '.js' back to the '.ts'
+// source, so the same line satisfies both.
+import { EXTERNAL_TIMEOUT_MS, handleEnrich } from '../server/enrich-core.js';
 
 export default {
   async fetch(request: Request): Promise<Response> {

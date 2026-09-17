@@ -14,8 +14,10 @@ import type {
   BatchEnrichment,
   Enrichment,
   EnrichmentEntry,
-} from '../shared/api-contract';
-import { MAX_BATCH_ISBNS } from '../shared/api-contract';
+} from '../shared/api-contract.js';
+// Extension required: Node resolves this at runtime in the deployed Function,
+// and it does not guess extensions.
+import { MAX_BATCH_ISBNS } from '../shared/api-contract.js';
 
 export const GOOGLE_BOOKS_ENDPOINT = 'https://www.googleapis.com/books/v1/volumes';
 

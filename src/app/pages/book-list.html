@@ -1,16 +1,24 @@
 @let current = state();
 
-<app-page-header
-  eyebrow="الفهرس"
-  [heading]="
-    current.kind === 'success' || current.kind === 'empty' ? current.category.name : 'الكتب'
-  "
-  [lede]="
-    current.kind === 'success' || current.kind === 'empty'
-      ? current.category.description
-      : 'تصفَّح الرفّ.'
-  "
-/>
+<app-page-header eyebrow="الفهرس" [heading]="heading()" [lede]="lede()" />
+
+<!-- Outside the switch on purpose: a visitor who lands on an unknown category
+     must still have somewhere to go. -->
+<nav class="category-nav" aria-label="تصنيفات الكتب">
+  <ul class="category-nav__list" role="list">
+    @for (category of categories; track category.slug) {
+      <li>
+        <a
+          class="category-nav__link"
+          [class.category-nav__link--current]="category.slug === activeSlug()"
+          [attr.aria-current]="category.slug === activeSlug() ? 'page' : null"
+          [routerLink]="['/categories', category.slug]"
+          >{{ category.name }}</a
+        >
+      </li>
+    }
+  </ul>
+</nav>
 
 @switch (current.kind) {
   @case ('loading') {
@@ -22,6 +30,14 @@
       <p class="state__title">{{ current.message }}</p>
       <p class="state__detail">لم يضع شيء، القائمة فقط لم تصل. حاول تحميلها من جديد.</p>
       <button type="button" class="button" (click)="load()">أعد المحاولة</button>
+    </div>
+  }
+
+  @case ('missing') {
+    <div class="state state--empty">
+      <p class="state__title">لا يوجد تصنيف بهذا العنوان.</p>
+      <p class="state__detail">اختر أحد التصنيفات أعلاه، أو عد إلى كل الكتب.</p>
+      <a class="button" routerLink="/books">العودة إلى كل الكتب</a>
     </div>
   }
 

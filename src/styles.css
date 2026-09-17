@@ -182,11 +182,22 @@ a {
 
 .compare__table {
   inline-size: 100%;
-  border-collapse: collapse;
+  /* Separate, not collapse: collapsed borders are painted by the table rather
+     than by each cell, so they do not travel with the sticky label column and
+     the row hairlines detach as the book columns scroll. Only block-start edges
+     are set, so nothing doubles and the result looks identical. */
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 0.9375rem;
 }
 
 .compare__caption {
+  /* Sticks with the label column. Otherwise it scrolls off with the book
+     columns and leaves an empty band above the table. */
+  position: sticky;
+  inset-inline-start: 0;
+  inline-size: max-content;
+  max-inline-size: 100vw;
   padding: 0.875rem 1rem;
   border-block-end: 1px solid var(--rule);
   color: var(--muted);
@@ -207,10 +218,27 @@ a {
   font-size: 1rem;
 }
 
+/* The row labels stay put while the book columns scroll sideways. Without this,
+   scrolling to the third book leaves a grid of numbers with nothing saying
+   which row is the price and which is the page count. */
+.compare__table tbody th,
+.compare__table thead th:first-child {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 1;
+  background: var(--surface);
+}
+
 .compare__table tbody th {
   color: var(--muted);
   font-weight: 600;
   white-space: nowrap;
+}
+
+/* Columns keep a readable width rather than being squeezed to fit. */
+.compare__table thead th:not(:first-child),
+.compare__table td {
+  min-inline-size: 9.5rem;
 }
 
 .compare__table tbody tr:nth-child(odd) td {
@@ -247,7 +275,9 @@ a {
   display: inline-flex;
   gap: 0.4rem;
   align-items: center;
-  margin-block-start: 0.875rem;
+  /* Same 44px floor as the category links. */
+  min-block-size: 2.75rem;
+  margin-block-start: 0.75rem;
   padding: 0.3rem 0.8rem;
   border: 1px solid var(--rule);
   border-radius: 999px;
@@ -300,8 +330,11 @@ a {
 }
 
 .category-nav__link {
-  display: inline-block;
-  padding: 0.35rem 0.9rem;
+  /* 44px minimum. These were about 30px tall, below what a thumb hits reliably. */
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+  padding: 0.35rem 1.1rem;
   border: 1px solid var(--rule);
   border-radius: 999px;
   background: var(--surface);
@@ -340,7 +373,8 @@ a {
 
 .book-card {
   position: relative;
-  padding: 1.5rem 1.25rem 1.25rem;
+  /* Tighter, so more than two books fit on a phone screen. */
+  padding: 1.15rem 1.1rem 1rem;
   border: 1px solid var(--rule);
   border-radius: 12px;
   background: var(--surface);

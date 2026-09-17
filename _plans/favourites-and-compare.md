@@ -48,10 +48,10 @@ Nothing is persisted server-side today, and this feature does not change that.
 | ----- | -------------------------------- | ----------- |
 | 1     | The favourites store             | Done        |
 | 2     | Marking, and the masthead count  | Done        |
-| 3     | Batch enrichment in the Function | Not started |
+| 3     | Batch enrichment in the Function | Done        |
 | 4     | The comparison page              | Not started |
 
-Phases 1 and 2 are committed. The comparison page does not exist yet, so the
+Phases 1 to 3 are committed. The comparison page does not exist yet, so the
 masthead link added in phase 2 lands on the not-found page until phase 4.
 
 ## Action required
@@ -139,12 +139,12 @@ The masthead count is a link to `/compare`, rendered on every page, with an
 
 ### Tasks
 
-- [ ] Extend `server/enrich-core.ts` to accept an `isbns` list parameter.
-- [ ] Validate every member, and cap the count.
-- [ ] Fetch them together, reporting per-ISBN success or absence.
-- [ ] Keep the single-`isbn` response shape exactly as it is.
-- [ ] Add the batch types to `shared/api-contract.ts`.
-- [ ] Extend `server/enrich-core.spec.ts`.
+- [x] Extend `server/enrich-core.ts` to accept an `isbns` list parameter.
+- [x] Validate every member, and cap the count.
+- [x] Fetch them together, reporting per-ISBN success or absence.
+- [x] Keep the single-`isbn` response shape exactly as it is.
+- [x] Add the batch types to `shared/api-contract.ts`.
+- [x] Extend `server/enrich-core.spec.ts`.
 
 ### Technical details
 
@@ -162,12 +162,12 @@ its own outcome, and the request succeeds if it was well-formed.
 
 ### Done when
 
-- [ ] `?isbn=` behaves exactly as before — the existing tests still pass unchanged.
-- [ ] `?isbns=a,b` returns an entry for each.
-- [ ] One malformed member rejects the whole request with `invalid_request`.
-- [ ] More than the cap rejects with `invalid_request` and calls nothing upstream.
-- [ ] An unknown ISBN among known ones is reported as absent, not as a failure.
-- [ ] The key never appears in any response body.
+- [x] `?isbn=` behaves exactly as before — the existing tests still pass unchanged.
+- [x] `?isbns=a,b` returns an entry for each.
+- [x] One malformed member rejects the whole request with `invalid_request`.
+- [x] More than the cap rejects with `invalid_request` and calls nothing upstream.
+- [x] An unknown ISBN among known ones is reported as absent, not as a failure.
+- [x] The key never appears in any response body.
 
 ## Phase 4: The comparison page
 
@@ -234,6 +234,23 @@ nothing observable to test. The branch is never merged in this intermediate
 state, so no visitor sees it. If the phases are ever merged separately, phase 2
 must not go without phase 4.
 
+**Phase 3's batch tests went in a new file, not into `enrich-core.spec.ts` as
+the task said.** They are in `server/enrich-batch.spec.ts` instead.
+
+Deliberate once the task was underway. The phase's first Done-when is that the
+single-ISBN path behaves exactly as before, and the strongest evidence for that
+is `enrich-core.spec.ts` being untouched by this commit — all 35 of its tests
+still passing without a line changed. Editing that file to add batch tests would
+have thrown away the proof.
+
+**Phase 3's `found: false` conflates two outcomes.** "Google has no such volume"
+and "that one lookup failed" both produce the same entry. The spec only asked
+that one unknown ISBN not fail the others, which this satisfies, but a total
+upstream outage now returns 200 with every entry absent rather than an error.
+Acceptable because the page keeps its local fields either way and offers a
+retry; worth revisiting if the comparison page ever looks broken rather than
+incomplete.
+
 **Phase 2's "reloading and returning" check is covered by unit tests, not a
 reload.** The persistence test constructs a fresh service against the same
 `localStorage`, which is what a reload does to this code but is not literally a
@@ -244,7 +261,8 @@ claim is actually settled.
 
 One entry per session, including the reviewer's actual result.
 
-| Date       | Phases touched | Notes                                                                                                                                                                                                                                                          |
-| ---------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-09-17 | 1              | Store written and covered. 16 new tests, 36 Angular tests total, typecheck clean. Two `localStorage` failure modes tested by making it throw — private windows and quota. Reviewer not yet run this phase.                                                     |
-| 2026-09-17 | 2              | Toggle component, used on both pages, plus the masthead count. 5 new tests, 41 Angular and 35 server. The card-wide link needed a stacking context or the button never received its click — anticipated in the plan and it was right. Two deviations recorded. |
+| Date       | Phases touched | Notes                                                                                                                                                                                                                                                           |
+| ---------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-17 | 1              | Store written and covered. 16 new tests, 36 Angular tests total, typecheck clean. Two `localStorage` failure modes tested by making it throw — private windows and quota. Reviewer not yet run this phase.                                                      |
+| 2026-09-17 | 2              | Toggle component, used on both pages, plus the masthead count. 5 new tests, 41 Angular and 35 server. The card-wide link needed a stacking context or the button never received its click — anticipated in the plan and it was right. Two deviations recorded.  |
+| 2026-09-17 | 3              | Batch form of the endpoint, capped at 24, one AbortController for the whole batch. 13 new tests in a new file; `enrich-core.spec.ts` deliberately untouched and its 35 tests still pass, which is the evidence the single path did not change. 48 server tests. |

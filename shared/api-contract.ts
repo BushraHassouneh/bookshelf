@@ -43,3 +43,29 @@ export interface Enrichment {
 /** Intrinsic size of a Google Books thumbnail, used for explicit width/height. */
 export const THUMBNAIL_WIDTH = 128;
 export const THUMBNAIL_HEIGHT = 193;
+
+/**
+ * The most ISBNs one request may carry.
+ *
+ * This is a security boundary, not a nicety. Each ISBN costs one upstream call,
+ * so without a cap a crafted URL turns a single request into an unbounded
+ * fan-out on our credential. Twice the current catalogue, so it cannot be
+ * reached honestly.
+ */
+export const MAX_BATCH_ISBNS = 24;
+
+/**
+ * One requested ISBN's outcome. `found: false` covers both "Google has no such
+ * volume" and "that one lookup failed", because neither is worth failing the
+ * whole request over — the page still has the book's local fields to show.
+ */
+export interface EnrichmentEntry {
+  isbn13: string;
+  found: boolean;
+  enrichment: Enrichment | null;
+}
+
+/** The response to the list form. One entry per requested ISBN, in request order. */
+export interface BatchEnrichment {
+  results: readonly EnrichmentEntry[];
+}

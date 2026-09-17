@@ -19,6 +19,11 @@ export const CATEGORIES: readonly Category[] = [
     name: 'الأدب العربي',
     description: 'روايات عربية تستحق قراءة ثانية، اخترناها للغتها بقدر ما اخترناها لحكايتها.',
   },
+  {
+    slug: 'tarikhi',
+    name: 'تاريخي',
+    description: 'كتب التاريخ والسِّيَر التي ما زال يُرجَع إليها بعد قرون من كتابتها.',
+  },
 ];
 
 export const BOOKS: readonly Book[] = [
@@ -61,5 +66,45 @@ export const BOOKS: readonly Book[] = [
     publishedDate: '1996-01-01',
     priceJod: 6.0,
     coverAlt: 'غلاف رواية موسم الهجرة إلى الشمال للطيب صالح',
+  },
+  {
+    slug: 'muqaddimat-ibn-khaldun',
+    categorySlug: 'tarikhi',
+    title: 'مقدمة ابن خلدون',
+    author: 'ابن خلدون',
+    isbn13: '9789953780887',
+    publishedDate: '2005-01-01',
+    priceJod: 15.0,
+    coverAlt: 'غلاف كتاب مقدمة ابن خلدون لابن خلدون',
+  },
+  {
+    slug: 'al-bidaya-wal-nihaya',
+    categorySlug: 'tarikhi',
+    title: 'البداية والنهاية',
+    author: 'ابن كثير',
+    isbn13: '9786443438617',
+    publishedDate: '2010-01-01',
+    priceJod: 18.5,
+    coverAlt: 'غلاف كتاب البداية والنهاية لابن كثير',
+  },
+  {
+    slug: 'al-kamil-fi-al-tarikh',
+    categorySlug: 'tarikhi',
+    title: 'المختار من الكامل في التاريخ',
+    author: 'ابن الأثير',
+    isbn13: '9789770157268',
+    publishedDate: '2000-01-01',
+    priceJod: 9.5,
+    coverAlt: 'غلاف كتاب المختار من الكامل في التاريخ لابن الأثير',
+  },
+  {
+    slug: 'fajr-al-islam',
+    categorySlug: 'tarikhi',
+    title: 'فجر الإسلام',
+    author: 'أحمد أمين',
+    isbn13: '9781527303645',
+    publishedDate: '2022-08-17',
+    priceJod: 8.75,
+    coverAlt: 'غلاف كتاب فجر الإسلام لأحمد أمين',
   },
 ];

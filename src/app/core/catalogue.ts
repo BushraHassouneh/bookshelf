@@ -24,6 +24,11 @@ export const CATEGORIES: readonly Category[] = [
     name: 'تاريخي',
     description: 'كتب التاريخ والسِّيَر التي ما زال يُرجَع إليها بعد قرون من كتابتها.',
   },
+  {
+    slug: 'dini',
+    name: 'ديني',
+    description: 'أمّهات الكتب في الفقه والسيرة والتزكية، بطبعاتها المتداولة اليوم.',
+  },
 ];
 
 export const BOOKS: readonly Book[] = [
@@ -106,5 +111,45 @@ export const BOOKS: readonly Book[] = [
     publishedDate: '2022-08-17',
     priceJod: 8.75,
     coverAlt: 'غلاف كتاب فجر الإسلام لأحمد أمين',
+  },
+  {
+    slug: 'ihya-ulum-al-din',
+    categorySlug: 'dini',
+    title: 'إحياء علوم الدين',
+    author: 'أبو حامد الغزالي',
+    isbn13: '9789953356259',
+    publishedDate: '2005-01-01',
+    priceJod: 16.0,
+    coverAlt: 'غلاف كتاب إحياء علوم الدين لأبي حامد الغزالي',
+  },
+  {
+    slug: 'riyad-al-salihin',
+    categorySlug: 'dini',
+    title: 'رياض الصالحين',
+    author: 'محيي الدين النووي',
+    isbn13: '9789953442143',
+    publishedDate: '2016-11-23',
+    priceJod: 12.0,
+    coverAlt: 'غلاف كتاب رياض الصالحين لمحيي الدين النووي',
+  },
+  {
+    slug: 'zad-al-maad',
+    categorySlug: 'dini',
+    title: 'زاد المعاد في هدي خير العباد',
+    author: 'ابن قيم الجوزية',
+    isbn13: '9786000188719',
+    publishedDate: '2004-01-01',
+    priceJod: 14.5,
+    coverAlt: 'غلاف كتاب زاد المعاد في هدي خير العباد لابن قيم الجوزية',
+  },
+  {
+    slug: 'al-raheeq-al-makhtum',
+    categorySlug: 'dini',
+    title: 'الرحيق المختوم',
+    author: 'صفي الرحمن المباركفوري',
+    isbn13: '9789953442136',
+    publishedDate: '2016-11-16',
+    priceJod: 10.0,
+    coverAlt: 'غلاف كتاب الرحيق المختوم لصفي الرحمن المباركفوري',
   },
 ];

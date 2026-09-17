@@ -46,12 +46,32 @@ duplicate.
 
 Pick four real, well-known Arabic books that genuinely belong in this category.
 
-For each, fetch
-`https://openlibrary.org/api/books?bibkeys=ISBN:<isbn13>&format=json&jscmd=data`
-and confirm two things:
+**Do not guess an ISBN.** Find it by searching, then use the one the search
+returns. On this command's first real use, four guessed ISBNs for well-known
+titles all resolved to unrelated books — a children's book, a short-story
+collection. Search like this, and take `industryIdentifiers` from the result whose
+author matches:
 
-1. the ISBN resolves to a record at all, and
-2. the author it returns is the book's real author
+```
+https://www.googleapis.com/books/v1/volumes?q=intitle:<title>+inauthor:<author>&langRestrict=ar&maxResults=20&key=<key>
+```
+
+Then confirm two things about the ISBN you took:
+
+1. it resolves to a record, and
+2. the author returned is the book's real author
+
+Either of these sources is acceptable, and if the first is unreachable use the
+other rather than skipping the check:
+
+- Google Books `?q=isbn:<isbn13>&key=...` — needs `GOOGLE_BOOKS_API_KEY`
+- Open Library `https://openlibrary.org/api/books?bibkeys=ISBN:<isbn13>&format=json&jscmd=data`
+  — no key
+
+<!-- 17 Sep: this step named Open Library alone, and Open Library began
+     returning 404 for every ISBN mid-run, including ones it had resolved an
+     hour before. A verification step with one source is a verification step
+     that can be skipped by accident. -->
 
 **This check is not optional.** Searching for مدن الملح once returned an edition
 credited to a critic rather than to عبد الرحمن منيف, and it nearly shipped. If an

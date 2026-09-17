@@ -1,0 +1,157 @@
+@let book = bookState();
+
+<app-page-header
+  eyebrow="كتاب"
+  [heading]="book.kind === 'ready' ? book.book.title : 'كتاب'"
+  [lede]="
+    book.kind === 'ready' ? book.book.author : 'عنوان واحد من الرفّ، مع تفاصيله من Google Books.'
+  "
+/>
+
+@switch (book.kind) {
+  @case ('loading') {
+    <p class="state state--loading" role="status" aria-live="polite">جارٍ تحميل هذا الكتاب…</p>
+  }
+
+  @case ('missing') {
+    <div class="state state--empty">
+      <p class="state__title">لا يوجد كتاب على هذا العنوان.</p>
+      <p class="state__detail">ربما تغيّر اسمه. كل ما لدينا موجود على الرفّ.</p>
+      <a class="button" routerLink="/books">العودة إلى كل الكتب</a>
+    </div>
+  }
+
+  @case ('error') {
+    <div class="state state--error" role="alert">
+      <p class="state__title">{{ book.message }}</p>
+      <a class="button" routerLink="/books">العودة إلى كل الكتب</a>
+    </div>
+  }
+
+  @case ('ready') {
+    <article class="book">
+      <dl class="book__facts">
+        <div class="book__row">
+          <dt>المؤلف</dt>
+          <dd>{{ book.book.author }}</dd>
+        </div>
+        <div class="book__row">
+          <dt>تاريخ النشر</dt>
+          <dd>
+            <span dir="ltr">{{ formatIsoDate(book.book.publishedDate) }}</span>
+          </dd>
+        </div>
+        <div class="book__row">
+          <dt>السعر</dt>
+          <dd>
+            <span dir="ltr">{{ formatMoney(book.book.priceJod) }}</span>
+          </dd>
+        </div>
+        <div class="book__row">
+          <dt>ردمك</dt>
+          <dd>
+            <span dir="ltr">{{ book.book.isbn13 }}</span>
+          </dd>
+        </div>
+      </dl>
+
+      <section class="enrichment" aria-labelledby="enrichment-heading">
+        <h2 id="enrichment-heading" class="enrichment__heading">من Google Books</h2>
+
+        @let enrichment = enrichmentState();
+        @switch (enrichment.kind) {
+          @case ('idle') {
+            <p class="state state--loading">في انتظار تحميل الكتاب…</p>
+          }
+
+          @case ('loading') {
+            <p class="state state--loading" role="status" aria-live="polite">
+              جارٍ جلب تفاصيل إضافية عن هذا الكتاب…
+            </p>
+          }
+
+          @case ('error') {
+            <div class="state state--error" role="alert">
+              <p class="state__title">{{ enrichment.error.message }}</p>
+              <p class="state__detail">
+                الكتاب نفسه معروض أعلاه، التفاصيل الإضافية وحدها هي الناقصة.
+              </p>
+              <button type="button" class="button" (click)="loadEnrichment(book.book.isbn13)">
+                أعد المحاولة
+              </button>
+            </div>
+          }
+
+          @case ('ready') {
+            <div class="enrichment__body">
+              @if (enrichment.enrichment.thumbnailUrl !== null) {
+                <img
+                  class="enrichment__cover"
+                  [src]="enrichment.enrichment.thumbnailUrl"
+                  [alt]="book.book.coverAlt"
+                  [width]="thumbnailWidth"
+                  [height]="thumbnailHeight"
+                  loading="lazy"
+                  decoding="async"
+                />
+              }
+
+              <div class="enrichment__text">
+                @if (enrichment.enrichment.description !== null) {
+                  <p class="enrichment__description">{{ enrichment.enrichment.description }}</p>
+                } @else {
+                  <p class="enrichment__description enrichment__description--absent">
+                    لا يوفّر Google Books وصفًا لهذه الطبعة.
+                  </p>
+                }
+
+                <dl class="book__facts">
+                  @if (enrichment.enrichment.publisher !== null) {
+                    <div class="book__row">
+                      <dt>الناشر</dt>
+                      <dd>{{ enrichment.enrichment.publisher }}</dd>
+                    </div>
+                  }
+                  @if (enrichment.enrichment.pageCount !== null) {
+                    <div class="book__row">
+                      <dt>عدد الصفحات</dt>
+                      <dd>
+                        <span dir="ltr">{{ enrichment.enrichment.pageCount }}</span>
+                      </dd>
+                    </div>
+                  }
+                  @if (
+                    enrichment.enrichment.averageRating !== null &&
+                    enrichment.enrichment.ratingsCount !== null
+                  ) {
+                    <div class="book__row">
+                      <dt>التقييم</dt>
+                      <dd>
+                        <span dir="ltr">{{ enrichment.enrichment.averageRating }}</span> من 5، من
+                        <span dir="ltr">{{ enrichment.enrichment.ratingsCount }}</span> تقييمًا
+                      </dd>
+                    </div>
+                  }
+                </dl>
+
+                @if (enrichment.enrichment.infoUrl !== null) {
+                  <p>
+                    <a
+                      class="enrichment__link"
+                      [href]="enrichment.enrichment.infoUrl"
+                      rel="noopener noreferrer"
+                      target="_blank"
+                      >اطّلع على هذه الطبعة في Google Books</a
+                    >
+                  </p>
+                }
+              </div>
+            </div>
+          }
+        }
+      </section>
+    </article>
+
+    <p class="back"><a routerLink="/books">العودة إلى كل الكتب</a></p>
+  }
+}

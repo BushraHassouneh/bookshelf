@@ -1,0 +1,63 @@
+@let current = state();
+
+<app-page-header
+  eyebrow="الفهرس"
+  [heading]="
+    current.kind === 'success' || current.kind === 'empty' ? current.category.name : 'الكتب'
+  "
+  [lede]="
+    current.kind === 'success' || current.kind === 'empty'
+      ? current.category.description
+      : 'تصفَّح الرفّ.'
+  "
+/>
+
+@switch (current.kind) {
+  @case ('loading') {
+    <p class="state state--loading" role="status" aria-live="polite">جارٍ تحميل كتب هذا التصنيف…</p>
+  }
+
+  @case ('error') {
+    <div class="state state--error" role="alert">
+      <p class="state__title">{{ current.message }}</p>
+      <p class="state__detail">لم يضع شيء، القائمة فقط لم تصل. حاول تحميلها من جديد.</p>
+      <button type="button" class="button" (click)="load()">أعد المحاولة</button>
+    </div>
+  }
+
+  @case ('empty') {
+    <div class="state state--empty">
+      <p class="state__title">لا توجد كتب في هذا التصنيف بعد.</p>
+      <p class="state__detail">
+        أضف كتابًا إلى <code dir="ltr">src/app/core/catalogue.ts</code> وسيظهر هنا.
+      </p>
+    </div>
+  }
+
+  @case ('success') {
+    <ul class="book-grid" role="list">
+      @for (book of current.books; track book.slug) {
+        <li class="book-card">
+          <h2 class="book-card__title">
+            <a class="book-card__link" [routerLink]="['/books', book.slug]">{{ book.title }}</a>
+          </h2>
+          <p class="book-card__author">{{ book.author }}</p>
+          <dl class="book-card__meta">
+            <div class="book-card__row">
+              <dt>تاريخ النشر</dt>
+              <dd>
+                <span dir="ltr">{{ formatIsoDate(book.publishedDate) }}</span>
+              </dd>
+            </div>
+            <div class="book-card__row">
+              <dt>السعر</dt>
+              <dd>
+                <span dir="ltr">{{ formatMoney(book.priceJod) }}</span>
+              </dd>
+            </div>
+          </dl>
+        </li>
+      }
+    </ul>
+  }
+}

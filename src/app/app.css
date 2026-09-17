@@ -1,0 +1,69 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 100vh;
+  max-inline-size: 64rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+
+.masthead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-block-start: 1.25rem;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  background: linear-gradient(100deg, var(--c-violet), var(--c-rose) 58%, var(--c-amber));
+  color: #ffffff;
+}
+
+.masthead__brand {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.masthead__brand:hover {
+  text-decoration: underline;
+}
+
+.masthead__nav a {
+  color: #ffffff;
+  font-weight: 600;
+  text-decoration: none;
+  opacity: 0.92;
+}
+
+.masthead__nav a:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.masthead :focus-visible {
+  outline-color: #ffffff;
+}
+
+.main {
+  flex: 1;
+  padding-block: 2.5rem 4rem;
+}
+
+.main:focus {
+  outline: none;
+}
+
+.colophon {
+  padding-block: 1.5rem;
+  border-block-start: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.colophon p {
+  margin: 0;
+}

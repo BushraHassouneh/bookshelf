@@ -1,0 +1,12 @@
+/* The server side: the Vercel Function and the logic behind it.
+   Kept separate from the Angular projects so browser code can never import
+   `process`, and server code can never import a DOM global by accident. */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "lib": ["ES2023"],
+    "noEmit": true
+  },
+  "include": ["api/**/*.ts", "server/**/*.ts", "shared/**/*.ts"]
+}

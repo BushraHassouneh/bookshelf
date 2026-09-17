@@ -1,0 +1,34 @@
+<!--
+  The house page header. Copy this into a new page rather than re-inventing it.
+
+  Rule 1 of the house style: every page opens with an eyebrow, an h1, and one
+  muted sentence. Error and not-found pages included — especially those.
+
+  The component is src/app/shared/page-header.ts. Import PageHeader in the page's
+  `imports` array. All three inputs are required, so a page cannot ship with a
+  missing lede.
+
+  - eyebrow  names the section. Short, a noun. Rendered uppercase and
+             letter-spaced by the component, so write it in normal case.
+  - heading  the page's h1. Usually the item's title, or a fixed page name.
+  - lede     one sentence, muted. Says what the page is for, not what it contains.
+
+  While data is still loading the title is unknown, so pass a sensible fixed
+  fallback rather than leaving the heading blank — see the ternaries below.
+-->
+
+<!-- Static page -->
+<app-page-header
+  eyebrow="غير موجود"
+  heading="هذه الصفحة غير موجودة"
+  lede="العنوان الذي وصلت منه لا يطابق شيئًا على الرفّ."
+/>
+
+<!-- Page whose heading depends on loaded data -->
+<app-page-header
+  eyebrow="كتاب"
+  [heading]="book.kind === 'ready' ? book.book.title : 'كتاب'"
+  [lede]="
+    book.kind === 'ready' ? book.book.author : 'عنوان واحد من الرفّ، مع تفاصيله من Google Books.'
+  "
+/>

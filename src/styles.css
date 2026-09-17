@@ -182,11 +182,22 @@ a {
 
 .compare__table {
   inline-size: 100%;
-  border-collapse: collapse;
+  /* Separate, not collapse: collapsed borders are painted by the table rather
+     than by each cell, so they do not travel with the sticky label column and
+     the row hairlines detach as the book columns scroll. Only block-start edges
+     are set, so nothing doubles and the result looks identical. */
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 0.9375rem;
 }
 
 .compare__caption {
+  /* Sticks with the label column. Otherwise it scrolls off with the book
+     columns and leaves an empty band above the table. */
+  position: sticky;
+  inset-inline-start: 0;
+  inline-size: max-content;
+  max-inline-size: 100vw;
   padding: 0.875rem 1rem;
   border-block-end: 1px solid var(--rule);
   color: var(--muted);

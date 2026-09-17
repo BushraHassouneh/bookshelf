@@ -234,6 +234,19 @@ nothing observable to test. The branch is never merged in this intermediate
 state, so no visitor sees it. If the phases are ever merged separately, phase 2
 must not go without phase 4.
 
+**The comparison page's `empty` is decided in the template, not in the state
+union — the reviewer's advisory 3, accepted and not actioned.** The house rule
+asks for the four states as one discriminated union so that adding a state is a
+compile error everywhere it is handled, and here `empty` sits outside that
+union.
+
+The reasoning for leaving it: `empty` is a property of the shortlist, which the
+component does not own — it is a signal on `FavouritesService` — while the other
+three describe the fetch. Folding them together means a computed view union that
+recomputes on every favourites change, and the reviewer's own wording is that
+the current form is defensible. Recorded rather than done, so the next person
+decides with the argument in front of them rather than rediscovering it.
+
 **`vercel dev` cannot serve this app's dev-server assets, and the cause is in
 `vercel.json`.** Found during phase 4's browser pass: every page loaded the
 shell but Angular never booted, because `/main.js` and `/@vite/client` returned 500. The SPA catch-all rewrite, `/(.*) → /index.html`, swallows the dev server's
@@ -317,5 +330,6 @@ One entry per session, including the reviewer's actual result.
 | 2026-09-17 | 1              | Store written and covered. 16 new tests, 36 Angular tests total, typecheck clean. Two `localStorage` failure modes tested by making it throw — private windows and quota. Reviewer not yet run this phase.                                                                                                                                                                                                                                                                                                                                                                                                           |
 | 2026-09-17 | 2              | Toggle component, used on both pages, plus the masthead count. 5 new tests, 41 Angular and 35 server. The card-wide link needed a stacking context or the button never received its click — anticipated in the plan and it was right. Two deviations recorded.                                                                                                                                                                                                                                                                                                                                                       |
 | 2026-09-17 | 3              | Batch form of the endpoint, capped at 24, one AbortController for the whole batch. 13 new tests in a new file; `enrich-core.spec.ts` deliberately untouched and its 35 tests still pass, which is the evidence the single path did not change. 48 server tests.                                                                                                                                                                                                                                                                                                                                                      |
+| 2026-09-17 | 4 (review)     | Reviewer run on the whole feature diff. **1 BLOCKING, 4 ADVISORY.** Blocking: `fetchEntry` collapsed transport failures and "no such volume" into the same absent entry, so a revoked key would render a full table of dashes with no error and no retry — fixed, with three tests. Advisories 2, 4 and 5 fixed (client-side cap, `…` versus `—` while loading, accessible name now contains the visible label). Advisory 3 accepted but not actioned, see Deviations. 49 Angular, 51 server.                                                                                                                        |
 | 2026-09-17 | 4              | Comparison page, plus the browser pass. 49 Angular, 48 server, and 24 of 24 browser checks green against real Chromium — including one `/api` request for three books, favourites surviving a genuine reload, the current marker under forced greyscale, and no horizontal scroll at 390px. Three deviations recorded, one of them a `vercel.json` bug.                                                                                                                                                                                                                                                              |
 | 2026-09-17 | 4              | Re-verified phase 4 through the Playwright MCP server, which was available this session. `site-reviewer` reported two BLOCKING RTL findings — the masthead count and the comparison caption — both now fixed and re-checked in the browser. Also corrected `enrichmentFor` to read the cache rather than the request state. 49 Angular, 48 server, typecheck and build clean. Browser pass: four states, retry while failing and then recovering, one `/api` call for three books and still one after a removal, six hand-edited storage values, and six columns at 400px with the table scrolling and the page not. |

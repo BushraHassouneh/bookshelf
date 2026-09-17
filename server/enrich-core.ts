@@ -119,12 +119,23 @@ function missingKeyResponse(): Response {
  * An abort is the exception — the caller checks the signal afterwards and turns
  * it into a timeout for the request as a whole.
  */
+/**
+ * `failed` separates "that lookup failed" from "Google has no such volume".
+ * Both leave the entry absent, but only the first means something is wrong: if
+ * every lookup fails — a revoked key, an outage — the request must say so rather
+ * than return a full table of blanks that reads as "none of these books exist".
+ */
+interface EntryOutcome {
+  entry: EnrichmentEntry;
+  failed: boolean;
+}
+
 async function fetchEntry(
   isbn13: string,
   apiKey: string,
   deps: EnrichDeps,
   signal: AbortSignal,
-): Promise<EnrichmentEntry> {
+): Promise<EntryOutcome> {
   const absent: EnrichmentEntry = { isbn13, found: false, enrichment: null };
   try {
     const upstream = await deps.fetchImpl(buildGoogleBooksUrl(isbn13, apiKey), {
@@ -132,12 +143,14 @@ async function fetchEntry(
       headers: { accept: 'application/json' },
     });
     if (!upstream.ok) {
-      return absent;
+      return { entry: absent, failed: true };
     }
     const enrichment = normalizeVolume(await upstream.json(), isbn13);
-    return enrichment === null ? absent : { isbn13, found: true, enrichment };
+    return enrichment === null
+      ? { entry: absent, failed: false }
+      : { entry: { isbn13, found: true, enrichment }, failed: false };
   } catch {
-    return absent;
+    return { entry: absent, failed: true };
   }
 }
 
@@ -175,9 +188,9 @@ async function handleBatch(raw: string, deps: EnrichDeps): Promise<Response> {
   // whole, so many books cannot hold the Function open longer than one can.
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), deps.timeoutMs);
-  let results: readonly EnrichmentEntry[];
+  let outcomes: readonly EntryOutcome[];
   try {
-    results = await Promise.all(
+    outcomes = await Promise.all(
       isbns.map((isbn13) => fetchEntry(isbn13, apiKey, deps, controller.signal)),
     );
   } finally {
@@ -188,6 +201,14 @@ async function handleBatch(raw: string, deps: EnrichDeps): Promise<Response> {
     return errorResponse('timeout', 'لم يستجب Google Books خلال خمس ثوانٍ.', 504);
   }
 
+  // One flaky book stays non-fatal; everything failing is an outage, and saying
+  // so is the difference between an error the reader can retry and a table of
+  // blanks that looks like an answer.
+  if (outcomes.every((outcome) => outcome.failed)) {
+    return errorResponse('external_error', 'تعذّر الوصول إلى Google Books.', 502);
+  }
+
+  const results: readonly EnrichmentEntry[] = outcomes.map((outcome) => outcome.entry);
   const body: BatchEnrichment = { results };
   return Response.json(body, { headers: { 'cache-control': 'public, max-age=3600' } });
 }

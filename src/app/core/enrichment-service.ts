@@ -5,6 +5,7 @@ import type {
   Enrichment,
   EnrichmentEntry,
 } from '../../../shared/api-contract';
+import { MAX_BATCH_ISBNS } from '../../../shared/api-contract';
 
 export type EnrichmentResult =
   | { readonly ok: true; readonly value: Enrichment }
@@ -23,6 +24,11 @@ const UNREACHABLE: ApiError = {
 const MALFORMED: ApiError = {
   code: 'external_error',
   message: 'أرسل الخادم استجابة تعذّر على هذه الصفحة قراءتها.',
+};
+
+const TOO_MANY: ApiError = {
+  code: 'invalid_request',
+  message: `لا يمكن مقارنة أكثر من ${MAX_BATCH_ISBNS} كتابًا في وقت واحد.`,
 };
 
 function isEnrichment(value: unknown): value is Enrichment {
@@ -85,6 +91,12 @@ export class EnrichmentService {
   async loadMany(isbn13s: readonly string[]): Promise<BatchEnrichmentResult> {
     if (isbn13s.length === 0) {
       return { ok: true, entries: [] };
+    }
+    // The spec enforces the cap on both sides. The server is the boundary that
+    // matters, but without this a shortlist over the cap would fail the whole
+    // page with a 400 instead of being caught here.
+    if (isbn13s.length > MAX_BATCH_ISBNS) {
+      return { ok: false, error: TOO_MANY };
     }
 
     const query = encodeURIComponent(isbn13s.join(','));

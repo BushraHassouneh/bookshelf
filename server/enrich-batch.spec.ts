@@ -151,6 +151,45 @@ describe('handleEnrich, list form', () => {
     expect(body.results[1]?.found).toBe(false);
   });
 
+  it('returns external_error when every lookup fails, rather than a table of blanks', async () => {
+    // A revoked or over-quota key fails every entry. Reporting that as "found:
+    // false" for all of them would render a full comparison of dashes that
+    // reads as "Google has no record of any of these books".
+    const allFail = (async () =>
+      new Response('forbidden', { status: 403 })) as unknown as typeof fetch;
+
+    const response = await handleEnrich(get(`isbns=${A},${B}`), deps({ fetchImpl: allFail }));
+    expect(response.status).toBe(502);
+    expect((await envelope(response)).error.code).toBe('external_error');
+  });
+
+  it('one failing lookup among successes is still not fatal', async () => {
+    const oneFails = vi.fn(async (input: unknown) => {
+      if (String(input).includes(B)) {
+        return new Response('nope', { status: 500 });
+      }
+      return new Response(JSON.stringify(volume(708)), { status: 200 });
+    }) as unknown as typeof fetch;
+
+    const response = await handleEnrich(get(`isbns=${A},${B}`), deps({ fetchImpl: oneFails }));
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as BatchEnrichment;
+    expect(body.results[0]?.found).toBe(true);
+    expect(body.results[1]?.found).toBe(false);
+  });
+
+  it('a genuinely unknown book is not treated as a failure', async () => {
+    // Every lookup "succeeds" but finds nothing: that is an answer, not an
+    // outage, so it must not become external_error.
+    const response = await handleEnrich(
+      get(`isbns=${A},${B}`),
+      deps({ fetchImpl: fetchByIsbn({}) }),
+    );
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as BatchEnrichment;
+    expect(body.results.every((entry) => !entry.found)).toBe(true);
+  });
+
   it('times out the batch as a whole rather than per book', async () => {
     const response = await handleEnrich(
       get(`isbns=${A},${B},${C}`),

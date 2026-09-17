@@ -34,10 +34,15 @@ export class FavouriteToggle {
 
   protected readonly isFavourite = computed(() => this.favourites.has(this.book().slug));
 
+  /**
+   * Starts with the button's visible wording, so the accessible name contains
+   * the visible label (WCAG 2.5.3). Someone using speech input says what they
+   * can see; a name that paraphrases it does not respond to them.
+   */
   protected readonly label = computed(() =>
     this.isFavourite()
-      ? `إزالة ${this.book().title} من المفضّلة`
-      : `إضافة ${this.book().title} إلى المفضّلة`,
+      ? `في المفضّلة: ${this.book().title} — اضغط للإزالة`
+      : `أضف إلى المفضّلة: ${this.book().title}`,
   );
 
   /**

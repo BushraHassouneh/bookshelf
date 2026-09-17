@@ -91,6 +91,15 @@ export class ComparePage {
     return this.fetched().get(isbn13) ?? null;
   }
 
+  /**
+   * What an empty cell shows. Still fetching is not the same as Google having
+   * no answer, and one glyph for both makes a loading table look like a
+   * finished one with nothing in it.
+   */
+  protected placeholder(): string {
+    return this.detail().kind === 'loading' ? '…' : '—';
+  }
+
   protected remove(slug: string): void {
     this.favourites.remove(slug);
   }

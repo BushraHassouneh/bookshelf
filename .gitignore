@@ -54,3 +54,7 @@ Thumbs.db
 
 # Vercel
 .vercel
+
+# Playwright MCP scratch output — screenshots, page snapshots and console logs
+# it writes into the repo root while driving the browser.
+.playwright-mcp

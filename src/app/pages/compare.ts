@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FavouritesService } from '../core/favourites-service';
 import { EnrichmentService } from '../core/enrichment-service';
@@ -17,7 +24,7 @@ import { formatIsoDate, formatMoney } from '../shared/formatters';
 type DetailState =
   | { readonly kind: 'loading' }
   | { readonly kind: 'error'; readonly error: ApiError }
-  | { readonly kind: 'ready'; readonly byIsbn: ReadonlyMap<string, Enrichment | null> };
+  | { readonly kind: 'ready' };
 
 @Component({
   selector: 'app-compare',
@@ -36,26 +43,29 @@ export class ComparePage {
   protected readonly formatMoney = formatMoney;
 
   /**
-   * Detail already fetched, held across changes to the shortlist. Removing a
-   * book must not re-request the ones that remain: that would blank their
-   * columns while the second request ran, and spend another upstream call per
-   * removal. Only ever grows, and is bounded by the size of the catalogue.
+   * Detail already fetched, held across changes to the shortlist and read
+   * directly by the template. Two things depend on it outliving a request:
+   * removing a book must not re-request the ones that remain, and a column that
+   * has been fetched once must not blank back to a dash while some later
+   * request is in flight. Only ever grows, so it is bounded by the catalogue.
    */
-  private readonly fetched = new Map<string, Enrichment | null>();
+  private readonly fetched = signal<ReadonlyMap<string, Enrichment | null>>(new Map());
 
   constructor() {
     // Re-runs when a book is removed, so the fetched columns stay in step with
-    // the shortlist without the page being reloaded.
+    // the shortlist without the page being reloaded. The shortlist is the only
+    // dependency: load() reads the cache, and tracking that too would make
+    // every fetch schedule a further pass through this effect.
     effect(() => {
       const isbns = this.favourites.books().map((book) => book.isbn13);
-      void this.load(isbns);
+      untracked(() => void this.load(isbns));
     });
   }
 
   protected async load(isbn13s: readonly string[] = this.currentIsbns()): Promise<void> {
-    const missing = isbn13s.filter((isbn13) => !this.fetched.has(isbn13));
+    const missing = isbn13s.filter((isbn13) => !this.fetched().has(isbn13));
     if (missing.length === 0) {
-      this.detail.set({ kind: 'ready', byIsbn: new Map(this.fetched) });
+      this.detail.set({ kind: 'ready' });
       return;
     }
     this.detail.set({ kind: 'loading' });
@@ -64,20 +74,21 @@ export class ComparePage {
       this.detail.set({ kind: 'error', error: result.error });
       return;
     }
+    const next = new Map(this.fetched());
     for (const entry of result.entries) {
-      this.fetched.set(entry.isbn13, entry.found ? entry.enrichment : null);
+      next.set(entry.isbn13, entry.found ? entry.enrichment : null);
     }
-    this.detail.set({ kind: 'ready', byIsbn: new Map(this.fetched) });
+    this.fetched.set(next);
+    this.detail.set({ kind: 'ready' });
   }
 
   protected currentIsbns(): readonly string[] {
     return this.favourites.books().map((book) => book.isbn13);
   }
 
-  /** Null while loading, on error, and for a book Google did not recognise. */
+  /** Null until a book's detail has arrived, and for one Google did not know. */
   protected enrichmentFor(isbn13: string): Enrichment | null {
-    const current = this.detail();
-    return current.kind === 'ready' ? (current.byIsbn.get(isbn13) ?? null) : null;
+    return this.fetched().get(isbn13) ?? null;
   }
 
   protected remove(slug: string): void {

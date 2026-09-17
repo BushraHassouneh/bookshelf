@@ -264,6 +264,27 @@ the other columns while it ran. The cache holds detail already fetched and only
 requests what is missing. Correct, and covered by a test that removing a book
 leaves the request count at one.
 
+**The reviewer found two BLOCKING findings, both RTL, both in this phase's
+surface.** The masthead count rendered `({{ favourites.count() }})` and the
+comparison caption rendered `{{ books.length }}` with the digits bare inside
+Arabic text, which is exactly the case CLAUDE.md's RTL rule names. Both are now
+wrapped in `<span dir="ltr">`. The masthead one mattered most: it is chrome on
+every page, and it was the only unwrapped number in the codebase.
+
+Not fixed, and deliberately: the rating cell renders
+`<span dir="ltr">{{ rating }}</span> من 5` with the literal `5` outside the
+wrapper. `book-detail.html` already ships that exact pattern on `main`, so
+changing only the comparison page would make the two disagree. It belongs in a
+pass over both, not in this phase.
+
+**`enrichmentFor` was reading the wrong thing, which the cache above had made
+load-bearing.** It returned detail only while `detail()` was `ready`, so any
+later request would have blanked every already-fetched column back to a dash —
+the very thing the cache was added to prevent. The cache is now a signal and is
+what the template reads; the state signal says only what the request is doing.
+The effect wraps its `load()` call in `untracked` so that writing the cache does
+not schedule another pass through the effect.
+
 **Phase 3's batch tests went in a new file, not into `enrich-core.spec.ts` as
 the task said.** They are in `server/enrich-batch.spec.ts` instead.
 
@@ -291,9 +312,10 @@ claim is actually settled.
 
 One entry per session, including the reviewer's actual result.
 
-| Date       | Phases touched | Notes                                                                                                                                                                                                                                                                                                                                                   |
-| ---------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-09-17 | 1              | Store written and covered. 16 new tests, 36 Angular tests total, typecheck clean. Two `localStorage` failure modes tested by making it throw — private windows and quota. Reviewer not yet run this phase.                                                                                                                                              |
-| 2026-09-17 | 2              | Toggle component, used on both pages, plus the masthead count. 5 new tests, 41 Angular and 35 server. The card-wide link needed a stacking context or the button never received its click — anticipated in the plan and it was right. Two deviations recorded.                                                                                          |
-| 2026-09-17 | 3              | Batch form of the endpoint, capped at 24, one AbortController for the whole batch. 13 new tests in a new file; `enrich-core.spec.ts` deliberately untouched and its 35 tests still pass, which is the evidence the single path did not change. 48 server tests.                                                                                         |
-| 2026-09-17 | 4              | Comparison page, plus the browser pass. 49 Angular, 48 server, and 24 of 24 browser checks green against real Chromium — including one `/api` request for three books, favourites surviving a genuine reload, the current marker under forced greyscale, and no horizontal scroll at 390px. Three deviations recorded, one of them a `vercel.json` bug. |
+| Date       | Phases touched | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ---------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-17 | 1              | Store written and covered. 16 new tests, 36 Angular tests total, typecheck clean. Two `localStorage` failure modes tested by making it throw — private windows and quota. Reviewer not yet run this phase.                                                                                                                                                                                                                                                                                                                                                                                                           |
+| 2026-09-17 | 2              | Toggle component, used on both pages, plus the masthead count. 5 new tests, 41 Angular and 35 server. The card-wide link needed a stacking context or the button never received its click — anticipated in the plan and it was right. Two deviations recorded.                                                                                                                                                                                                                                                                                                                                                       |
+| 2026-09-17 | 3              | Batch form of the endpoint, capped at 24, one AbortController for the whole batch. 13 new tests in a new file; `enrich-core.spec.ts` deliberately untouched and its 35 tests still pass, which is the evidence the single path did not change. 48 server tests.                                                                                                                                                                                                                                                                                                                                                      |
+| 2026-09-17 | 4              | Comparison page, plus the browser pass. 49 Angular, 48 server, and 24 of 24 browser checks green against real Chromium — including one `/api` request for three books, favourites surviving a genuine reload, the current marker under forced greyscale, and no horizontal scroll at 390px. Three deviations recorded, one of them a `vercel.json` bug.                                                                                                                                                                                                                                                              |
+| 2026-09-17 | 4              | Re-verified phase 4 through the Playwright MCP server, which was available this session. `site-reviewer` reported two BLOCKING RTL findings — the masthead count and the comparison caption — both now fixed and re-checked in the browser. Also corrected `enrichmentFor` to read the cache rather than the request state. 49 Angular, 48 server, typecheck and build clean. Browser pass: four states, retry while failing and then recovering, one `/api` call for three books and still one after a removal, six hand-edited storage values, and six columns at 400px with the table scrolling and the page not. |

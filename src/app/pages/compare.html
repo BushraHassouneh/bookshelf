@@ -32,9 +32,7 @@
     <table class="compare__table">
       <caption class="compare__caption">
         مقارنة بين
-        {{
-          books.length
-        }}
+        <span dir="ltr">{{ books.length }}</span>
         من الكتب المفضّلة
       </caption>
       <thead>
@@ -71,7 +69,7 @@
         <tr>
           <th scope="row">الناشر</th>
           @for (book of books; track book.slug) {
-            <td>{{ enrichmentFor(book.isbn13)?.publisher ?? '—' }}</td>
+            <td>{{ enrichmentFor(book.isbn13)?.publisher ?? placeholder() }}</td>
           }
         </tr>
         <tr>
@@ -82,7 +80,7 @@
               @if (pages) {
                 <span dir="ltr">{{ pages }}</span>
               } @else {
-                —
+                {{ placeholder() }}
               }
             </td>
           }

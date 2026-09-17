@@ -5,7 +5,7 @@
 | **Slug**    | `favourites-and-compare`                |
 | **Spec**    | `_specs/favourites-and-compare.md`      |
 | **Branch**  | `claude/feature/favourites-and-compare` |
-| **Status**  | Not started                             |
+| **Status**  | In progress                             |
 | **Created** | 2026-09-17                              |
 | **Updated** | 2026-09-17                              |
 
@@ -46,7 +46,7 @@ Nothing is persisted server-side today, and this feature does not change that.
 
 | Phase | Name                             | Status      |
 | ----- | -------------------------------- | ----------- |
-| 1     | The favourites store             | Not started |
+| 1     | The favourites store             | Done        |
 | 2     | Marking, and the masthead count  | Not started |
 | 3     | Batch enrichment in the Function | Not started |
 | 4     | The comparison page              | Not started |
@@ -74,13 +74,13 @@ the only thing a visitor can edit by hand.
 
 ### Tasks
 
-- [ ] Add `src/app/core/favourites-service.ts` holding the list as a signal.
-- [ ] Read from `localStorage` on construction, defensively.
-- [ ] Write back on every change.
-- [ ] Discard slugs that match no book in the catalogue.
-- [ ] Discard a stored value that is not an array of strings.
-- [ ] Deduplicate, and read back in catalogue order rather than insertion order.
-- [ ] Add `src/app/core/favourites-service.spec.ts` covering each of the above.
+- [x] Add `src/app/core/favourites-service.ts` holding the list as a signal.
+- [x] Read from `localStorage` on construction, defensively.
+- [x] Write back on every change.
+- [x] Discard slugs that match no book in the catalogue.
+- [x] Discard a stored value that is not an array of strings.
+- [x] Deduplicate, and read back in catalogue order rather than insertion order.
+- [x] Add `src/app/core/favourites-service.spec.ts` covering each of the above.
 
 ### Technical details
 
@@ -97,10 +97,10 @@ than in the page means the comparison and any future view agree.
 
 ### Done when
 
-- [ ] Toggling a slug twice returns the list to its starting state.
-- [ ] A stored `"not json"`, `"{}"`, `"[1,2,3]"` and `["no-such-book"]` all leave
+- [x] Toggling a slug twice returns the list to its starting state.
+- [x] A stored `"not json"`, `"{}"`, `"[1,2,3]"` and `["no-such-book"]` all leave
       the service reporting no favourites, and none of them throws.
-- [ ] `npm run typecheck` and `npm test` pass.
+- [x] `npm run typecheck` and `npm test` pass.
 
 ## Phase 2: Marking, and the masthead count
 
@@ -227,6 +227,6 @@ either very good or unread.
 
 One entry per session, including the reviewer's actual result.
 
-| Date | Phases touched | Notes |
-| ---- | -------------- | ----- |
-|      |                |       |
+| Date       | Phases touched | Notes                                                                                                                                                                                                      |
+| ---------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-17 | 1              | Store written and covered. 16 new tests, 36 Angular tests total, typecheck clean. Two `localStorage` failure modes tested by making it throw — private windows and quota. Reviewer not yet run this phase. |

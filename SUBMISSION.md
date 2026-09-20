@@ -112,6 +112,41 @@ books" — with no error state and no retry. Fixed in `828f7ac`: entries now car
 whether they failed, one flaky book stays non-fatal, and every lookup failing
 returns `502 external_error`.
 
+**The Vercel Function crashed on every single request, from the first
+deployment until it was found by opening the site on a phone.** This is the most
+useful thing in this document.
+
+The comparison page showed an error card reading "A server error has occurred" —
+in English, while every message this application produces is Arabic. That was
+Vercel's own platform error, which happens to use the same
+`{error:{code,message}}` envelope as ours, so the page rendered it faithfully.
+The runtime logs gave the cause:
+
+```
+/var/task/api/enrich.js:18
+import { EXTERNAL_TIMEOUT_MS, handleEnrich } from '../server/enrich-core';
+SyntaxError: Cannot use import statement outside a module
+```
+
+Vercel transpiles `api/enrich.ts` to JavaScript but does not bundle it, so the
+`import` survives into the output. With no `"type": "module"` in `package.json`,
+Node loaded that file as CommonJS, where `import` is illegal. Adding it revealed
+a second layer — `ERR_MODULE_NOT_FOUND` — because Node's ESM resolver takes a
+specifier verbatim and does not guess extensions. Fixed in `c36de49` and
+`6f4c155`.
+
+What makes it worth recording is why four green signals all missed it:
+
+- the 100 unit tests pass, because Vitest resolves extensionless imports
+- the Angular build passes, because esbuild resolves them
+- `vercel dev` passes, because its local runtime resolves them
+- the deployment reports `READY`, which means the build compiled, not that the
+  Function runs
+
+Every check was looking at something other than the deployed Function. It was
+found in about thirty seconds by a person opening the site on a phone, which is
+the argument for the human browser pass in one sentence.
+
 **The production build printed `Cannot find name 'process'` and nobody noticed
 until a deploy.** Vercel typechecks files under `api/` against the root
 `tsconfig.json` and cannot follow its project references, so it never saw
@@ -169,6 +204,17 @@ Honest list of what is not finished:
 4. **The browser pass used Playwright directly, not the Playwright MCP server**,
    for the same reason. 24 checks against a real Chromium, all passing.
 
+## Work specced but not built
+
+`_specs/covers-on-the-list.md` describes showing each book's cover on the
+catalogue page, fetched for a whole category in one request through the existing
+list endpoint. It is a written spec with no plan and no implementation, kept
+deliberately rather than deleted: it is the next thing this site should have, and
+the reasoning in it is worth more committed than discarded.
+
+Treat it as a proposal, not as unfinished work. Nothing in the repository depends
+on it.
+
 ## Verification
 
 - `npm run typecheck` — clean across all three TypeScript projects
@@ -178,3 +224,13 @@ Honest list of what is not finished:
   exactly one `/api` request for three compared books, favourites surviving a
   real reload, the current-category marker under forced greyscale, and no
   horizontal scroll at 390px
+- **Production verified unauthenticated**, which is the check that matters most,
+  because every earlier check was made from a signed-in browser or looked only at
+  build status:
+  - `GET /api/enrich?isbn=9789778616200` returns `publisher: "Diwan"`,
+    `pageCount: 708`, an Arabic description and a cover URL
+  - `GET /api/enrich?isbns=a,b,c` returns three entries, all `found: true`; the
+    one Google has no publisher or page count for comes back with nulls rather
+    than failing the request
+  - `/books` returns the catalogue, titled رفّ الكتب — not a login wall, so
+    Deployment Protection is off and a marker can open the site
